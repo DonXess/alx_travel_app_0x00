@@ -1,6 +1,8 @@
-from rest_framework import serializers # type: ignore
+
 from .models import Listing, Booking, Review
 from django.contrib.auth import get_user_model
+from rest_framework import serializers # type: ignore
+
 
 User = get_user_model()
 
