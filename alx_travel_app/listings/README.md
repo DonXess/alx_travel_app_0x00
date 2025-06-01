@@ -1,83 +1,116 @@
 # Listings App
 
-This Django application (`listings`) is a core component of the ALX Travel App project. It is responsible for managing all data related to travel property listings, user bookings, and reviews.
-
-## Table of Contents
-
--   [Purpose](#purpose)
--   [Models](#models)
--   [Serializers](#serializers)
--   [Management Commands](#management-commands)
--   [Admin Integration](#admin-integration)
--   [API Endpoints (Planned)](#api-endpoints-planned)
-
-## Purpose
-
-The `listings` app provides the data backbone for the travel application. It defines the structure for properties available for booking, tracks user bookings, and stores feedback through reviews.
+This is the core application for managing property listings, bookings, and reviews in the ALX Travel App.
 
 ## Models
 
-The following database models are defined within this app:
+### Listing
+Represents a property available for booking with the following fields:
+- `title`: Property title
+- `description`: Detailed property description
+- `host`: ForeignKey to User model (property owner)
+- `property_type`: Type of property (e.g., Apartment, House, Villa)
+- `price_per_night`: Price per night in USD
+- `bedrooms`: Number of bedrooms
+- `bathrooms`: Number of bathrooms
+- `max_guests`: Maximum number of guests
+- `location`: Physical address
+- `amenities`: JSON field for property amenities
+- `status`: Current status (active, inactive, booked)
+- `created_at`: Timestamp of creation
+- `updated_at`: Timestamp of last update
 
-1.  **`Listing`**: Represents a single travel property.
-    -   `title`: Name of the property.
-    -   `address`, `city`, `state`, `zipcode`: Location details.
-    -   `description`: Detailed description of the property.
-    -   `price`: Rental price (Decimal).
-    -   `bedrooms`, `bathrooms`, `sqft`, `lot_size`: Property specifications.
-    -   `photo_main`: Main image for the listing (requires Pillow).
-    -   `is_published`: Boolean indicating if the listing is active.
-    -   `list_date`: Date and time the listing was created.
+### Booking
+Manages property reservations:
+- `listing`: ForeignKey to Listing
+- `guest`: ForeignKey to User (person making the booking)
+- `check_in`: Check-in date
+- `check_out`: Check-out date
+- `status`: Booking status (pending, confirmed, cancelled, completed)
+- `total_price`: Total booking cost
+- `special_requests`: Any special requirements
+- `created_at`: Timestamp of creation
+- `updated_at`: Timestamp of last update
 
-2.  **`Booking`**: Represents a reservation made by a user for a specific listing.
-    -   `listing` (ForeignKey): Links to the `Listing` model.
-    -   `user` (ForeignKey): Links to Django's built-in `User` model.
-    -   `check_in_date`, `check_out_date`: Dates of the booking.
-    -   `total_price`: Calculated total cost of the booking.
-    -   `status`: Current status of the booking (e.g., 'Pending', 'Confirmed', 'Cancelled').
-    -   `booked_at`: Timestamp of booking creation.
-
-3.  **`Review`**: Represents a user's review and rating for a listing.
-    -   `listing` (ForeignKey): Links to the `Listing` model.
-    -   `user` (ForeignKey): Links to Django's built-in `User` model.
-    -   `rating`: Numerical rating (e.g., 1-5 stars).
-    -   `comment`: Textual feedback from the user.
-    -   `created_at`: Timestamp of review creation.
-    -   **Constraint:** `unique_together` on `(listing, user)` ensures a user can only submit one review per listing.
-
-## Serializers
-
-Serializers are defined using Django REST Framework to convert model instances into JSON/Python native datatypes and handle validation for incoming data.
-
--   **`ListingSerializer`**: Serializes `Listing` model data.
--   **`BookingSerializer`**: Serializes `Booking` model data.
--   **`ReviewSerializer`**: Serializes `Review` model data.
-
-These are located in `listings/serializers.py`.
+### Review
+Handles user reviews for properties:
+- `booking`: OneToOneField to Booking
+- `listing`: ForeignKey to Listing
+- `reviewer`: ForeignKey to User (person writing the review)
+- `rating`: Rating from 1 to 5
+- `comment`: Review text
+- `created_at`: Timestamp of creation
+- `updated_at`: Timestamp of last update
 
 ## Management Commands
 
-A custom Django management command is available to facilitate development:
+### Seed Command
+Populates the database with sample data for testing and development.
 
--   **`python manage.py seed_data`**:
-    This command clears all existing `Listing`, `Booking`, and `Review` data from the database and then populates it with a set of sample, dummy data. This is useful for quickly setting up a development environment with test data.
+**Usage:**
+```bash
+python manage.py seed [--users N] [--listings N] [--bookings N] [--reviews N]
+```
 
-    **Usage:**
-    ```bash
-    python manage.py seed_data
-    ```
+**Options:**
+- `--users`: Number of users to create (default: 5)
+- `--listings`: Number of listings to create (default: 10)
+- `--bookings`: Number of bookings to create (default: 20)
+- `--reviews`: Number of reviews to create (default: 15)
+- `--clear`: Clear existing data before seeding (default: False)
 
-## Admin Integration
+**Examples:**
+1. Seed with default values:
+   ```bash
+   python manage.py seed
+   ```
 
-All models (`Listing`, `Booking`, `Review`) are registered with the Django administration site (`listings/admin.py`), allowing for easy CRUD (Create, Read, Update, Delete) operations via the `/admin/` interface.
+2. Create specific number of records:
+   ```bash
+   python manage.py seed --users 3 --listings 5 --bookings 15 --reviews 10
+   ```
 
-## API Endpoints (Planned)
+3. Clear existing data and seed:
+   ```bash
+   python manage.py seed --clear
+   ```
 
-This app will be the foundation for the following API endpoints (to be implemented in `listings/views.py` and `listings/urls.py`):
+The seed command ensures data consistency by:
+- Creating users with realistic names and emails
+- Generating listings with diverse property types and amenities
+- Creating valid bookings with proper date ranges
+- Adding reviews only for completed bookings
 
--   `/api/listings/`
--   `/api/listings/<id>/`
--   `/api/bookings/`
--   `/api/bookings/<id>/`
--   `/api/reviews/`
--   `/api/reviews/<id>/`
+## API Endpoints
+
+### Listings
+- `GET /api/listings/`: List all active listings
+- `POST /api/listings/`: Create a new listing (authenticated)
+- `GET /api/listings/{id}/`: Get listing details
+- `PUT /api/listings/{id}/`: Update a listing (owner only)
+- `DELETE /api/listings/{id}/`: Delete a listing (owner only)
+
+### Bookings
+- `GET /api/bookings/`: List user's bookings
+- `POST /api/bookings/`: Create a new booking
+- `GET /api/bookings/{id}/`: Get booking details
+- `PATCH /api/bookings/{id}/status/`: Update booking status (host/owner only)
+
+### Reviews
+- `GET /api/listings/{id}/reviews/`: Get reviews for a listing
+- `POST /api/listings/{id}/reviews/`: Add a review (authenticated users only)
+
+## Running Tests
+
+To run the test suite:
+```bash
+python manage.py test listings
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

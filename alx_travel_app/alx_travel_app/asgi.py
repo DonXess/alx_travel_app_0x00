@@ -1,5 +1,5 @@
 """
-ASGI config for alx_travel_app project.
+ASGI config for alxtravelapp project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
